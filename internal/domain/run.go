@@ -99,6 +99,10 @@ func (r *FermentationRun) AddObservation(observation GravityObservation) error {
 		return NewError(CodeObservationConflict,
 			"run cannot contain more than 500 observations")
 	}
+	// Freeze the temperature correction at collection time. The corrected
+	// value is part of the accepted reading and must never be recomputed by
+	// later reads, completion, or snapshot restoration.
+	observation = observation.WithStandardGravity(DefaultGravityCorrection())
 	var previous *GravityObservation
 	if len(r.Observations) > 0 {
 		value := r.Observations[len(r.Observations)-1]
@@ -143,7 +147,11 @@ func (r *FermentationRun) Complete(originalGravity float64, now time.Time) error
 	}
 	stamp := now.UTC()
 	final := r.Observations[len(r.Observations)-1]
-	metrics := CalculateMetrics(originalGravity, final.Gravity, len(r.Observations))
+	metrics := CalculateMetrics(
+		originalGravity,
+		final.EffectiveStandardGravity(),
+		len(r.Observations),
+	)
 	r.Metrics = &metrics
 	r.State = RunCompleted
 	r.EndedAt = &stamp

@@ -53,6 +53,17 @@ func (o GravityObservation) HasConfirmedStandardGravity() bool {
 	return o.StandardGravity != 0 && o.Correction.Valid()
 }
 
+// EffectiveStandardGravity returns the temperature-corrected gravity captured
+// once, at collection time, and stored with the reading. Every accepted
+// observation carries that confirmed result; the raw gravity is only a
+// defensive fallback for records that predate correction persistence.
+func (o GravityObservation) EffectiveStandardGravity() float64 {
+	if o.HasConfirmedStandardGravity() {
+		return o.StandardGravity
+	}
+	return o.Gravity
+}
+
 func (o GravityObservation) WithStandardGravity(
 	correction GravityCorrection,
 ) GravityObservation {

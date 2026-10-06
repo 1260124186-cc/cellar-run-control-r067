@@ -13,17 +13,8 @@ import (
 )
 
 const (
-	stateFileName                      = "state.json"
-	legacyGravityReferenceTemperatureC = 15.0
+	stateFileName = "state.json"
 )
-
-func restorationGravityCorrection() domain.GravityCorrection {
-	return domain.GravityCorrection{
-		ReferenceTemperatureC: legacyGravityReferenceTemperatureC,
-		Coefficient:           domain.GravityCorrectionCoefficient,
-		Version:               domain.GravityCorrectionVersion,
-	}
-}
 
 type Store struct {
 	mu       sync.RWMutex
@@ -89,14 +80,24 @@ func normalizeSnapshot(value domain.Snapshot) (domain.Snapshot, error) {
 	if value.RunIndex == nil {
 		value.RunIndex = map[string]string{}
 	}
-	correction := restorationGravityCorrection()
+	correction := domain.DefaultGravityCorrection()
 	for runID, run := range value.Runs {
+		changed := false
 		for index := range run.Observations {
+			// Preserve the correction captured at collection time. Only
+			// readings that predate persisted corrections are backfilled,
+			// and restarting must never change an accepted reading.
+			if run.Observations[index].HasConfirmedStandardGravity() {
+				continue
+			}
 			run.Observations[index] = run.Observations[index].WithStandardGravity(
 				correction,
 			)
+			changed = true
 		}
-		value.Runs[runID] = run
+		if changed {
+			value.Runs[runID] = run
+		}
 	}
 	if err := validateIndexes(value); err != nil {
 		return domain.Snapshot{}, err
