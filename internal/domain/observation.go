@@ -53,6 +53,13 @@ func (o GravityObservation) HasConfirmedStandardGravity() bool {
 	return o.StandardGravity != 0 && o.Correction.Valid()
 }
 
+// CorrectedGravity returns the temperature-corrected gravity captured when the
+// observation was accepted. It is the single value shared by run detail, run
+// list, and completion metrics, and it never changes after acceptance.
+func (o GravityObservation) CorrectedGravity() float64 {
+	return o.StandardGravity
+}
+
 func (o GravityObservation) WithStandardGravity(
 	correction GravityCorrection,
 ) GravityObservation {

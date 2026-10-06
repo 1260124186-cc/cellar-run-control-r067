@@ -89,9 +89,17 @@ func normalizeSnapshot(value domain.Snapshot) (domain.Snapshot, error) {
 	if value.RunIndex == nil {
 		value.RunIndex = map[string]string{}
 	}
+	// Backfill only observations that predate temperature-corrected gravity
+	// (legacy snapshots have no confirmed standard gravity). Readings accepted
+	// by the current service already carry the correction captured at their
+	// observation time, so they are preserved byte-for-byte across restarts
+	// and list, detail, and completion all observe the same value.
 	correction := restorationGravityCorrection()
 	for runID, run := range value.Runs {
 		for index := range run.Observations {
+			if run.Observations[index].HasConfirmedStandardGravity() {
+				continue
+			}
 			run.Observations[index] = run.Observations[index].WithStandardGravity(
 				correction,
 			)

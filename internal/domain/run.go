@@ -143,7 +143,7 @@ func (r *FermentationRun) Complete(originalGravity float64, now time.Time) error
 	}
 	stamp := now.UTC()
 	final := r.Observations[len(r.Observations)-1]
-	metrics := CalculateMetrics(originalGravity, final.Gravity, len(r.Observations))
+	metrics := CalculateMetrics(originalGravity, final.CorrectedGravity(), len(r.Observations))
 	r.Metrics = &metrics
 	r.State = RunCompleted
 	r.EndedAt = &stamp

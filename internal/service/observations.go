@@ -85,13 +85,6 @@ func (s *Service) CompleteRun(
 		if err := run.Complete(formula.TargetOriginalGravity, s.clock.Now()); err != nil {
 			return err
 		}
-		final := run.Observations[len(run.Observations)-1]
-		metrics := domain.CalculateMetrics(
-			formula.TargetOriginalGravity,
-			final.Gravity,
-			len(run.Observations),
-		)
-		run.Metrics = &metrics
 		if run.VesselID == nil {
 			return domain.NewError(domain.CodeRunState, "run has no vessel")
 		}
